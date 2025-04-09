@@ -123,7 +123,19 @@ const Header = ({ handleLeftDrawerToggle }) => {
                     </Avatar>
                 </ButtonBase>
             </Box>
-            <Box sx={{ flexGrow: 1, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+            <Box
+                sx={{
+                    flexGrow: 1,
+                    display: 'flex',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    pointerEvents: 'none',
+                    position: 'absolute',
+                    width: '100%',
+                    left: 0,
+                    zIndex: 0
+                }}
+            >
                 <CenteredLogo />
             </Box>
             <MaterialUISwitch checked={isDark} onChange={changeDarkMode} />

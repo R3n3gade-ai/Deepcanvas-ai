@@ -1888,8 +1888,7 @@ export const ChatMessage = ({ open, chatflowid, isAgentCanvas, isDialog, preview
                                                                 placeholder='Name'
                                                                 name='leadName'
                                                                 value={leadName}
-                                                                // eslint-disable-next-line
-                                                                autoFocus={true}
+                                                                // Remove autoFocus to prevent the blinking cursor issue
                                                                 onChange={(e) => setLeadName(e.target.value)}
                                                             />
                                                         )}
@@ -2221,8 +2220,7 @@ export const ChatMessage = ({ open, chatflowid, isAgentCanvas, isDialog, preview
                     <form style={{ width: '100%' }} onSubmit={handleSubmit}>
                         <OutlinedInput
                             inputRef={inputRef}
-                            // eslint-disable-next-line
-                            autoFocus
+                            // Remove autoFocus to prevent the blinking cursor issue
                             sx={{ width: '100%' }}
                             disabled={getInputDisabled()}
                             onKeyDown={handleEnter}

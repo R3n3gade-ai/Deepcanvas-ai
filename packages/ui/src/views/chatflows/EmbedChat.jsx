@@ -154,7 +154,7 @@ export const defaultThemeConfig = {
             sendButtonColor: '#3B81F6',
             maxChars: 50,
             maxCharsWarningMessage: 'You exceeded the characters limit. Please input less than 50 characters.',
-            autoFocus: true,
+            autoFocus: false, // Disabled to prevent the blinking cursor issue
             sendMessageSound: true,
             sendSoundLocation: 'send_message.mp3',
             receiveMessageSound: true,

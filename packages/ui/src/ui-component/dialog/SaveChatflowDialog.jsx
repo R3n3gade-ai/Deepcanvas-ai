@@ -31,8 +31,7 @@ const SaveChatflowDialog = ({ show, dialogProps, onCancel, onConfirm }) => {
             </DialogTitle>
             <DialogContent>
                 <OutlinedInput
-                    // eslint-disable-next-line jsx-a11y/no-autofocus
-                    autoFocus
+                    // Remove autoFocus to prevent the blinking cursor issue
                     sx={{ mt: 1 }}
                     id='chatflow-name'
                     type='text'

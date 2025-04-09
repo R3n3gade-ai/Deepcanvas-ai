@@ -46,14 +46,55 @@ const createChatSession = async (apiKey, modelName = 'gemini-2.0-flash') => {
     }
 }
 
-// Send a message to Gemini
-const sendMessageToGemini = async (chatSession, message, systemInstruction = '') => {
-    try {
-        // If system instruction is provided, include it
-        const messageWithInstruction = systemInstruction ? `${systemInstruction}\n\nUser: ${message}` : message
+// Format instructions for Gemini to structure responses properly
+const formattingInstructions = `
+Please format your responses using proper Markdown formatting to improve readability:
 
-        const result = await chatSession.sendMessage(messageWithInstruction)
-        return result.response.text()
+1. Use headings (# for main headings, ## for subheadings, etc.) to organize your response
+2. Use bullet points (* or -) for lists
+3. Use numbered lists (1. 2. 3.) for sequential steps
+4. Use **bold** for emphasis
+5. Use code blocks with triple backticks for code examples
+6. Use > for blockquotes
+7. Break your response into clear paragraphs
+8. Use tables when presenting structured data
+
+This formatting will make your responses more readable and easier to understand.
+`
+
+// Send a message to Gemini with streaming support
+const sendMessageToGemini = async (chatSession, message, systemInstruction = '', onChunk = null) => {
+    try {
+        // Combine system instruction with formatting instructions
+        const combinedInstructions = systemInstruction ? `${systemInstruction}\n\n${formattingInstructions}` : formattingInstructions
+
+        // If system instruction is provided, include it
+        const messageWithInstruction = combinedInstructions ? `${combinedInstructions}\n\nUser: ${message}` : message
+
+        // If no onChunk callback is provided, use the non-streaming version
+        if (!onChunk) {
+            const result = await chatSession.sendMessage(messageWithInstruction)
+            return result.response.text()
+        }
+
+        // Use streaming for a more interactive experience
+        const result = await chatSession.sendMessageStream(messageWithInstruction)
+
+        // Initialize an empty response
+        let fullResponse = ''
+
+        // Process each chunk as it arrives
+        for await (const chunk of result.stream) {
+            const chunkText = chunk.text()
+            fullResponse += chunkText
+
+            // Call the callback with the current chunk and full response so far
+            if (onChunk) {
+                onChunk(chunkText, fullResponse)
+            }
+        }
+
+        return fullResponse
     } catch (error) {
         console.error('Error sending message to Gemini:', error)
         throw error

@@ -1,5 +1,8 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
+import ReactMarkdown from 'react-markdown'
+import { MemoizedReactMarkdown } from './MemoizedReactMarkdown'
+import './Markdown.css'
 import {
     Grid,
     Typography,
@@ -194,7 +197,7 @@ const Dashboard = () => {
         }
     }, [location])
     // State for chat messages
-    const [messages, setMessages] = useState([{ id: 1, text: "Hello! I'm TED. How can I help you today?", isUser: false }])
+    const [messages, setMessages] = useState([{ id: 1, text: 'Hello! How can I help you today?', isUser: false }])
 
     // State for input text
     const [inputText, setInputText] = useState('')
@@ -258,7 +261,7 @@ const Dashboard = () => {
         const newChat = {
             id: newChatId,
             name: `Chat ${chatHistory.length + 1}`,
-            messages: [{ id: 1, text: "Hello! I'm TED. How can I help you today?", isUser: false }]
+            messages: [{ id: 1, text: 'Hello! How can I help you today?', isUser: false }]
         }
 
         setChatHistory([...chatHistory, newChat])
@@ -324,18 +327,44 @@ const Dashboard = () => {
         // Set loading state
         setIsLoading(true)
 
-        try {
-            // Send message to Gemini
-            const response = await sendMessageToGemini(chatSession, inputText, systemInstruction)
+        // Create an initial bot response with "Thinking..." text
+        const botResponseId = Date.now() + 1
+        const initialBotResponse = {
+            id: botResponseId,
+            text: 'Thinking...',
+            isUser: false
+        }
 
-            // Create bot response
+        // Add the initial bot response to the messages
+        setMessages([...updatedMessages, initialBotResponse])
+
+        try {
+            // Create a callback function to handle streaming chunks
+            const handleStreamingChunk = (chunkText, fullText) => {
+                // Update the bot response with the current full text
+                setMessages((prevMessages) => {
+                    // Find and update the bot message
+                    return prevMessages.map((msg) => {
+                        if (msg.id === botResponseId) {
+                            return { ...msg, text: fullText }
+                        }
+                        return msg
+                    })
+                })
+            }
+
+            // Send message to Gemini with streaming support
+            const response = await sendMessageToGemini(chatSession, inputText, systemInstruction, handleStreamingChunk)
+
+            // Create the final bot response
             const botResponse = {
-                id: Date.now() + 1,
+                id: botResponseId,
                 text: response,
                 isUser: false
             }
 
-            const finalMessages = [...updatedMessages, botResponse]
+            // Update messages with the final response
+            const finalMessages = updatedMessages.concat([botResponse])
             setMessages(finalMessages)
 
             // Update chat history
@@ -357,6 +386,16 @@ const Dashboard = () => {
         } catch (error) {
             console.error('Error sending message to Gemini:', error)
             setError('Failed to get response from Gemini. Please try again.')
+
+            // Update the bot response to show the error
+            setMessages((prevMessages) => {
+                return prevMessages.map((msg) => {
+                    if (msg.id === botResponseId) {
+                        return { ...msg, text: 'Sorry, I encountered an error. Please try again.' }
+                    }
+                    return msg
+                })
+            })
             setIsLoading(false)
         }
     }
@@ -553,17 +592,76 @@ const Dashboard = () => {
                 aria-label='dashboard tabs'
                 sx={{ borderBottom: 1, borderColor: 'divider', mb: 2 }}
             >
-                <Tab icon={<HomeIcon />} label='TED Live' {...a11yProps(0)} />
-                <Tab label='Chatflows' {...a11yProps(1)} />
-                <Tab label='Agentflows' {...a11yProps(2)} />
-                <Tab label='Marketplaces' {...a11yProps(3)} />
+                <Tab icon={<HomeIcon />} label='Chat' {...a11yProps(0)} />
+                <Tab
+                    label={
+                        <Button
+                            variant='contained'
+                            sx={{
+                                borderRadius: '12px',
+                                textTransform: 'none',
+                                boxShadow: 'none',
+                                '&:hover': { boxShadow: 1 }
+                            }}
+                            onClick={(e) => {
+                                e.stopPropagation()
+                                navigate('/canvas')
+                            }}
+                            startIcon={<AddIcon />}
+                        >
+                            Chatflows
+                        </Button>
+                    }
+                    {...a11yProps(1)}
+                />
+                <Tab
+                    label={
+                        <Button
+                            variant='contained'
+                            sx={{
+                                borderRadius: '12px',
+                                textTransform: 'none',
+                                boxShadow: 'none',
+                                '&:hover': { boxShadow: 1 }
+                            }}
+                            onClick={(e) => {
+                                e.stopPropagation()
+                                navigate('/agentcanvas')
+                            }}
+                            startIcon={<AddIcon />}
+                        >
+                            Agentflows
+                        </Button>
+                    }
+                    {...a11yProps(2)}
+                />
+                <Tab
+                    label={
+                        <Button
+                            variant='contained'
+                            sx={{
+                                borderRadius: '12px',
+                                textTransform: 'none',
+                                boxShadow: 'none',
+                                '&:hover': { boxShadow: 1 }
+                            }}
+                            onClick={(e) => {
+                                e.stopPropagation()
+                                navigate('/marketplace')
+                            }}
+                        >
+                            Marketplace
+                        </Button>
+                    }
+                    {...a11yProps(3)}
+                />
             </Tabs>
 
             <TabPanel value={tabValue} index={0}>
                 <Grid container spacing={2}>
                     <Grid item xs={12}>
                         <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
-                            <Typography variant='h3'>TED Live</Typography>
+                            <Typography variant='h3'>Chat</Typography>
                             <Box>
                                 {/* API Key button hidden as we're using a permanent key */}
                                 <Tooltip title='Library'>
@@ -606,7 +704,7 @@ const Dashboard = () => {
                                 <Box sx={{ display: 'flex', justifyContent: 'center', p: 4, flexWrap: 'wrap' }}>
                                     <FeatureButton variant='outlined' onClick={handleVoiceInput} disabled={isScreenSharing}>
                                         <MicIcon fontSize='large' />
-                                        <Typography>Talk to TED</Typography>
+                                        <Typography>Voice Input</Typography>
                                         <Typography variant='caption'>Start a real conversation using your microphone</Typography>
                                     </FeatureButton>
 
@@ -622,7 +720,11 @@ const Dashboard = () => {
                             <MessageContainer ref={messageContainerRef}>
                                 {messages.map((message) => (
                                     <MessageBubble key={message.id} isUser={message.isUser}>
-                                        <Typography variant='body1'>{message.text}</Typography>
+                                        {message.isUser ? (
+                                            <Typography variant='body1'>{message.text}</Typography>
+                                        ) : (
+                                            <MemoizedReactMarkdown>{message.text}</MemoizedReactMarkdown>
+                                        )}
                                     </MessageBubble>
                                 ))}
                                 {isLoading && (
@@ -637,7 +739,7 @@ const Dashboard = () => {
                                 <TextField
                                     fullWidth
                                     variant='outlined'
-                                    placeholder='Message TED...'
+                                    placeholder='Type your message...'
                                     value={inputText}
                                     onChange={(e) => setInputText(e.target.value)}
                                     onKeyPress={(e) => {

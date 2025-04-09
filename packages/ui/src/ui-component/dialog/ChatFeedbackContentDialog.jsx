@@ -48,8 +48,7 @@ const ChatFeedbackContentDialog = ({ show, onCancel, onConfirm }) => {
             <DialogContent>
                 <Box sx={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                     <OutlinedInput
-                        // eslint-disable-next-line
-                        autoFocus
+                        // Remove autoFocus to prevent the blinking cursor issue
                         id='feedbackContentInput'
                         multiline={true}
                         name='feedbackContentInput'
