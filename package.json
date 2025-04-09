@@ -117,5 +117,8 @@
                 }
             ]
         ]
+    },
+    "dependencies": {
+        "@google/generative-ai": "^0.15.0"
     }
 }

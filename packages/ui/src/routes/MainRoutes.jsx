@@ -4,6 +4,18 @@ import { lazy } from 'react'
 import MainLayout from '@/layout/MainLayout'
 import Loadable from '@/ui-component/loading/Loadable'
 
+// dashboard routing
+const Dashboard = Loadable(lazy(() => import('@/views/dashboard')))
+
+// studio routing
+const Studio = Loadable(lazy(() => import('@/views/studio')))
+
+// app builder routing
+const AppBuilder = Loadable(lazy(() => import('@/views/appbuilder')))
+
+// tasks routing
+const Tasks = Loadable(lazy(() => import('@/views/tasks')))
+
 // chatflows routing
 const Chatflows = Loadable(lazy(() => import('@/views/chatflows')))
 
@@ -47,7 +59,23 @@ const MainRoutes = {
     children: [
         {
             path: '/',
-            element: <Chatflows />
+            element: <Dashboard />
+        },
+        {
+            path: '/dashboard',
+            element: <Dashboard />
+        },
+        {
+            path: '/studio',
+            element: <Studio />
+        },
+        {
+            path: '/appbuilder',
+            element: <AppBuilder />
+        },
+        {
+            path: '/tasks',
+            element: <Tasks />
         },
         {
             path: '/chatflows',

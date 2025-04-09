@@ -9,8 +9,8 @@ import { Avatar, Box, ButtonBase, Switch } from '@mui/material'
 import { styled } from '@mui/material/styles'
 
 // project imports
-import LogoSection from '../LogoSection'
 import ProfileSection from './ProfileSection'
+import CenteredLogo from '@/ui-component/extended/CenteredLogo'
 
 // assets
 import { IconMenu2 } from '@tabler/icons-react'
@@ -101,9 +101,7 @@ const Header = ({ handleLeftDrawerToggle }) => {
                     }
                 }}
             >
-                <Box component='span' sx={{ display: { xs: 'none', md: 'block' }, flexGrow: 1 }}>
-                    <LogoSection />
-                </Box>
+                {/* Logo section removed */}
                 <ButtonBase sx={{ borderRadius: '12px', overflow: 'hidden' }}>
                     <Avatar
                         variant='rounded'
@@ -125,7 +123,9 @@ const Header = ({ handleLeftDrawerToggle }) => {
                     </Avatar>
                 </ButtonBase>
             </Box>
-            <Box sx={{ flexGrow: 1 }} />
+            <Box sx={{ flexGrow: 1, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                <CenteredLogo />
+            </Box>
             <MaterialUISwitch checked={isDark} onChange={changeDarkMode} />
             <Box sx={{ ml: 2 }}></Box>
             <ProfileSection handleLogout={signOutClicked} username={localStorage.getItem('username') ?? ''} />

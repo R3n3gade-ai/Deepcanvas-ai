@@ -43,6 +43,7 @@ import vectorRouter from './vectors'
 import verifyRouter from './verify'
 import versionRouter from './versions'
 import nvidiaNimRouter from './nvidia-nim'
+import videoGenerationRouter from './video-generation'
 
 const router = express.Router()
 
@@ -90,5 +91,6 @@ router.use('/verify', verifyRouter)
 router.use('/version', versionRouter)
 router.use('/upsert-history', upsertHistoryRouter)
 router.use('/nvidia-nim', nvidiaNimRouter)
+router.use('/video', videoGenerationRouter)
 
 export default router

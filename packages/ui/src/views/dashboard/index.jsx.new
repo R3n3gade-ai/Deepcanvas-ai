@@ -1,0 +1,870 @@
+import { useState, useEffect, useRef } from 'react'
+import { useNavigate, useLocation } from 'react-router-dom'
+import {
+    Grid,
+    Typography,
+    Box,
+    Paper,
+    TextField,
+    IconButton,
+    Button,
+    Divider,
+    List,
+    ListItem,
+    ListItemText,
+    ListItemButton,
+    Drawer,
+    AppBar,
+    Toolbar,
+    FormControl,
+    InputLabel,
+    Select,
+    MenuItem,
+    Switch,
+    FormControlLabel,
+    Tooltip,
+    CircularProgress,
+    Avatar,
+    Alert,
+    Snackbar,
+    Tabs,
+    Tab
+} from '@mui/material'
+import { styled } from '@mui/material/styles'
+import SendIcon from '@mui/icons-material/Send'
+import MicIcon from '@mui/icons-material/Mic'
+import ScreenShareIcon from '@mui/icons-material/ScreenShare'
+import SettingsIcon from '@mui/icons-material/Settings'
+import AddIcon from '@mui/icons-material/Add'
+import DeleteIcon from '@mui/icons-material/Delete'
+import MoreVertIcon from '@mui/icons-material/MoreVert'
+import CodeIcon from '@mui/icons-material/Code'
+import InfoIcon from '@mui/icons-material/Info'
+import StopIcon from '@mui/icons-material/Stop'
+// Use alternative icons for ones that might not be available
+import VpnKeyIcon from '@mui/icons-material/VpnKey'
+import VolumeDownIcon from '@mui/icons-material/VolumeDown'
+import FunctionsIcon from '@mui/icons-material/Functions'
+import MicOffIcon from '@mui/icons-material/MicOff'
+import HomeIcon from '@mui/icons-material/Home'
+import LibraryBooksIcon from '@mui/icons-material/LibraryBooks'
+
+// Import Gemini service and config
+import { createChatSession, sendMessageToGemini, sendImageToGemini, textToSpeech } from '@/services/geminiService'
+import geminiConfig from '@/config/geminiConfig'
+
+// Styled components
+const ChatContainer = styled(Box)(({ theme }) => ({
+    display: 'flex',
+    flexDirection: 'column',
+    height: 'calc(100vh - 220px)',
+    position: 'relative'
+}))
+
+const MessageContainer = styled(Box)(({ theme }) => ({
+    flexGrow: 1,
+    overflow: 'auto',
+    padding: theme.spacing(2),
+    display: 'flex',
+    flexDirection: 'column',
+    gap: theme.spacing(2)
+}))
+
+const MessageBubble = styled(Paper)(({ theme, isUser }) => ({
+    padding: theme.spacing(2),
+    maxWidth: '70%',
+    alignSelf: isUser ? 'flex-end' : 'flex-start',
+    backgroundColor: isUser ? theme.palette.primary.light : theme.palette.background.paper,
+    color: isUser ? theme.palette.primary.contrastText : theme.palette.text.primary,
+    borderRadius: theme.spacing(2)
+}))
+
+const InputContainer = styled(Box)(({ theme }) => ({
+    display: 'flex',
+    padding: theme.spacing(2),
+    borderTop: `1px solid ${theme.palette.divider}`
+}))
+
+const SystemInstructionContainer = styled(Box)(({ theme }) => ({
+    padding: theme.spacing(2),
+    borderBottom: `1px solid ${theme.palette.divider}`,
+    backgroundColor: theme.palette.background.paper
+}))
+
+const FeatureButton = styled(Button)(({ theme }) => ({
+    display: 'flex',
+    flexDirection: 'column',
+    padding: theme.spacing(2),
+    margin: theme.spacing(1),
+    width: 200,
+    height: 150,
+    textAlign: 'center',
+    '& .MuiSvgIcon-root': {
+        fontSize: '2rem',
+        marginBottom: theme.spacing(1)
+    }
+}))
+
+// Tab Panel component
+function TabPanel(props) {
+    const { children, value, index, ...other } = props
+
+    return (
+        <div
+            role="tabpanel"
+            hidden={value !== index}
+            id={`dashboard-tabpanel-${index}`}
+            aria-labelledby={`dashboard-tab-${index}`}
+            {...other}
+            style={{ height: 'calc(100% - 48px)', overflow: 'auto' }}
+        >
+            {value === index && (
+                <Box sx={{ p: 0, height: '100%' }}>
+                    {children}
+                </Box>
+            )}
+        </div>
+    )
+}
+
+function a11yProps(index) {
+    return {
+        id: `dashboard-tab-${index}`,
+        'aria-controls': `dashboard-tabpanel-${index}`,
+    }
+}
+
+const Dashboard = () => {
+    const navigate = useNavigate()
+    const location = useLocation()
+    const [tabValue, setTabValue] = useState(0)
+    
+    // Handle tab change
+    const handleTabChange = (event, newValue) => {
+        setTabValue(newValue)
+        
+        // Navigate to the appropriate route based on tab
+        switch(newValue) {
+            case 0: // Home/TED Live
+                navigate('/dashboard')
+                break
+            case 1: // Chatflows
+                navigate('/chatflows')
+                break
+            case 2: // Agentflows
+                navigate('/agentflows')
+                break
+            case 3: // Marketplaces
+                navigate('/marketplaces')
+                break
+            default:
+                navigate('/dashboard')
+        }
+    }
+    
+    // Set the active tab based on the current route
+    useEffect(() => {
+        if (location.pathname.includes('/chatflows')) {
+            setTabValue(1)
+        } else if (location.pathname.includes('/agentflows')) {
+            setTabValue(2)
+        } else if (location.pathname.includes('/marketplaces')) {
+            setTabValue(3)
+        } else {
+            setTabValue(0)
+        }
+    }, [location])
+    
+    // State for chat messages
+    const [messages, setMessages] = useState([
+        { id: 1, text: 'Hello! I\'m TED, powered by Gemini. How can I help you today?', isUser: false }
+    ])
+
+    // State for input text
+    const [inputText, setInputText] = useState('')
+
+    // State for system instruction
+    const [systemInstruction, setSystemInstruction] = useState('')
+
+    // State for settings
+    const [settings, setSettings] = useState({
+        model: geminiConfig.models.flash,
+        voice: 'alloy',
+        outputFormat: 'text',
+        codeExecution: false,
+        functionCalling: false
+    })
+
+    // State for API key
+    const [apiKey, setApiKey] = useState(geminiConfig.apiKey)
+    const [apiKeyDialogOpen, setApiKeyDialogOpen] = useState(!geminiConfig.apiKey)
+
+    // State for chat session
+    const [chatSession, setChatSession] = useState(null)
+
+    // State for error handling
+    const [error, setError] = useState(null)
+
+    // State for recording
+    const [isRecording, setIsRecording] = useState(false)
+
+    // State for screen sharing
+    const [isScreenSharing, setIsScreenSharing] = useState(false)
+
+    // State for loading
+    const [isLoading, setIsLoading] = useState(false)
+
+    // State for settings drawer
+    const [settingsOpen, setSettingsOpen] = useState(false)
+    
+    // State for library drawer
+    const [libraryOpen, setLibraryOpen] = useState(false)
+
+    // State for chat history
+    const [chatHistory, setChatHistory] = useState([
+        { id: 'default', name: 'New Chat', messages: [...messages] }
+    ])
+
+    // State for current chat
+    const [currentChatId, setCurrentChatId] = useState('default')
+
+    // Ref for message container to auto-scroll
+    const messageContainerRef = useRef(null)
+
+    // Auto-scroll to bottom when messages change
+    useEffect(() => {
+        if (messageContainerRef.current) {
+            messageContainerRef.current.scrollTop = messageContainerRef.current.scrollHeight
+        }
+    }, [messages])
+    
+    // Function to create a new chat
+    const createNewChat = () => {
+        const newChatId = `chat-${Date.now()}`
+        const newChat = {
+            id: newChatId,
+            name: `Chat ${chatHistory.length + 1}`,
+            messages: [{ id: 1, text: 'Hello! I\'m TED, powered by Gemini. How can I help you today?', isUser: false }]
+        }
+        
+        setChatHistory([...chatHistory, newChat])
+        switchChat(newChatId)
+        setLibraryOpen(false)
+    }
+    
+    // Function to switch between chats
+    const switchChat = (chatId) => {
+        setCurrentChatId(chatId)
+        const chat = chatHistory.find(c => c.id === chatId)
+        if (chat) {
+            setMessages([...chat.messages])
+        }
+        setLibraryOpen(false)
+    }
+    
+    // Function to delete a chat
+    const deleteChat = (chatId, e) => {
+        e.stopPropagation()
+        if (chatHistory.length <= 1) {
+            // Don't delete the last chat
+            return
+        }
+        
+        const newChatHistory = chatHistory.filter(chat => chat.id !== chatId)
+        setChatHistory(newChatHistory)
+        
+        // If the current chat is deleted, switch to the first chat
+        if (currentChatId === chatId) {
+            switchChat(newChatHistory[0].id)
+        }
+    }
+
+    // Initialize chat session when API key is set
+    useEffect(() => {
+        if (apiKey) {
+            initializeChatSession()
+        }
+    }, [apiKey])
+
+    // Load chat history from local storage
+    useEffect(() => {
+        const savedHistory = localStorage.getItem('chatHistory')
+        if (savedHistory) {
+            try {
+                const parsedHistory = JSON.parse(savedHistory)
+                if (Array.isArray(parsedHistory) && parsedHistory.length > 0) {
+                    setChatHistory(parsedHistory)
+                    setCurrentChatId(parsedHistory[0].id)
+                    setMessages(parsedHistory[0].messages)
+                }
+            } catch (e) {
+                console.error('Error parsing chat history:', e)
+            }
+        }
+    }, [])
+
+    // Initialize chat session
+    const initializeChatSession = async () => {
+        try {
+            const session = await createChatSession(apiKey, settings.model)
+            setChatSession(session)
+        } catch (err) {
+            setError('Failed to initialize chat session. Please check your API key.')
+            console.error('Error initializing chat session:', err)
+        }
+    }
+
+    // Handle sending a message
+    const handleSendMessage = async () => {
+        if (inputText.trim() === '' || !chatSession) return
+
+        // Add user message to chat
+        const userMessage = { id: Date.now(), text: inputText, isUser: true }
+        const updatedMessages = [...messages, userMessage]
+        setMessages(updatedMessages)
+        setInputText('')
+
+        // Set loading state
+        setIsLoading(true)
+
+        try {
+            // Send message to Gemini
+            const response = await sendMessageToGemini(chatSession, inputText, systemInstruction)
+
+            // Create bot response
+            const botResponse = {
+                id: Date.now() + 1,
+                text: response,
+                isUser: false
+            }
+
+            const finalMessages = [...updatedMessages, botResponse]
+            setMessages(finalMessages)
+
+            // Update chat history
+            updateChatHistory(finalMessages)
+
+            // If output format is audio, convert text to speech
+            if (settings.outputFormat === 'audio') {
+                const audioData = await textToSpeech(apiKey, response, settings.voice)
+                // In a real implementation, you would play this audio
+                console.log('Audio data:', audioData)
+
+                // Simulate playing audio
+                const audio = new Audio()
+                audio.src = 'data:audio/mp3;base64,' + audioData
+                audio.play()
+            }
+
+        } catch (err) {
+            setError('Failed to get response from Gemini. Please try again.')
+            console.error('Error sending message:', err)
+        } finally {
+            setIsLoading(false)
+        }
+    }
+
+    // Handle API key update
+    const handleApiKeyUpdate = (newApiKey) => {
+        setApiKey(newApiKey)
+        localStorage.setItem('geminiApiKey', newApiKey)
+        setApiKeyDialogOpen(false)
+    }
+
+    // Handle error close
+    const handleErrorClose = () => {
+        setError(null)
+    }
+
+    // Format timestamp
+    const formatTime = (timestamp) => {
+        const date = new Date(timestamp)
+        return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    }
+
+    // Copy text to clipboard
+    const copyToClipboard = (text) => {
+        navigator.clipboard.writeText(text)
+            .then(() => {
+                console.log('Text copied to clipboard')
+            })
+            .catch(err => {
+                console.error('Failed to copy text: ', err)
+            })
+    }
+
+    // Handle voice input
+    const handleVoiceInput = () => {
+        if (!isRecording) {
+            // Start recording
+            setIsRecording(true)
+
+            // Check if browser supports speech recognition
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition
+            if (SpeechRecognition) {
+                const recognition = new SpeechRecognition()
+                recognition.continuous = true
+                recognition.interimResults = true
+                recognition.lang = 'en-US'
+
+                recognition.onresult = (event) => {
+                    const transcript = Array.from(event.results)
+                        .map(result => result[0])
+                        .map(result => result.transcript)
+                        .join('')
+
+                    setInputText(transcript)
+                }
+
+                recognition.onend = () => {
+                    setIsRecording(false)
+                }
+
+                recognition.start()
+
+                // Store recognition instance to stop it later
+                window.recognitionInstance = recognition
+            } else {
+                alert('Speech recognition is not supported in your browser.')
+                setIsRecording(false)
+            }
+        } else {
+            // Stop recording
+            setIsRecording(false)
+            if (window.recognitionInstance) {
+                window.recognitionInstance.stop()
+            }
+        }
+    }
+
+    // Handle screen sharing
+    const handleScreenShare = async () => {
+        if (!isScreenSharing && chatSession) {
+            try {
+                setIsScreenSharing(true)
+                const mediaStream = await navigator.mediaDevices.getDisplayMedia({ video: true })
+                
+                // Create a video element to capture a frame
+                const video = document.createElement('video')
+                video.srcObject = mediaStream
+                
+                // Wait for the video to be loaded
+                await new Promise(resolve => {
+                    video.onloadedmetadata = resolve
+                })
+                
+                // Play the video (required to capture frames)
+                await video.play()
+                
+                // Create a canvas to capture the frame
+                const canvas = document.createElement('canvas')
+                canvas.width = video.videoWidth
+                canvas.height = video.videoHeight
+                
+                // Draw the current frame to the canvas
+                const ctx = canvas.getContext('2d')
+                ctx.drawImage(video, 0, 0, canvas.width, canvas.height)
+                
+                // Get the image data as base64
+                const imageData = canvas.toDataURL('image/jpeg')
+                
+                // Stop all tracks
+                mediaStream.getTracks().forEach(track => track.stop())
+                
+                // Add the screenshot to the chat
+                const userMessage = { 
+                    id: Date.now(), 
+                    text: 'I shared my screen. What do you see?', 
+                    isUser: true,
+                    image: imageData
+                }
+                
+                const updatedMessages = [...messages, userMessage]
+                setMessages(updatedMessages)
+                
+                // Set loading state
+                setIsLoading(true)
+                
+                try {
+                    // Send image to Gemini
+                    const response = await sendImageToGemini(chatSession, imageData, 'What do you see in this screenshot?')
+                    
+                    // Create bot response
+                    const botResponse = {
+                        id: Date.now() + 1,
+                        text: response,
+                        isUser: false
+                    }
+                    
+                    const finalMessages = [...updatedMessages, botResponse]
+                    setMessages(finalMessages)
+                    
+                    // Update chat history
+                    updateChatHistory(finalMessages)
+                } catch (err) {
+                    setError('Failed to analyze the screenshot. Please try again.')
+                    console.error('Error sending image:', err)
+                } finally {
+                    setIsLoading(false)
+                    setIsScreenSharing(false)
+                }
+            } catch (err) {
+                console.error('Error sharing screen:', err)
+                setIsScreenSharing(false)
+                if (err.name === 'NotAllowedError') {
+                    setError('Screen sharing permission denied.')
+                } else {
+                    setError('Failed to share screen. Please try again.')
+                }
+            }
+        } else {
+            setIsScreenSharing(false)
+        }
+    }
+
+    // Update chat history
+    const updateChatHistory = (updatedMessages) => {
+        const updatedHistory = chatHistory.map(chat =>
+            chat.id === currentChatId ? { ...chat, messages: updatedMessages } : chat
+        )
+        setChatHistory(updatedHistory)
+
+        // Save to local storage
+        localStorage.setItem('chatHistory', JSON.stringify(updatedHistory))
+    }
+
+    return (
+        <Box sx={{ mt: 2, height: 'calc(100vh - 88px)', display: 'flex', flexDirection: 'column' }}>
+            <Tabs 
+                value={tabValue} 
+                onChange={handleTabChange} 
+                aria-label="dashboard tabs"
+                sx={{ borderBottom: 1, borderColor: 'divider', mb: 2 }}
+            >
+                <Tab icon={<HomeIcon />} label="TED Live" {...a11yProps(0)} />
+                <Tab label="Chatflows" {...a11yProps(1)} />
+                <Tab label="Agentflows" {...a11yProps(2)} />
+                <Tab label="Marketplaces" {...a11yProps(3)} />
+            </Tabs>
+            
+            <TabPanel value={tabValue} index={0}>
+                <Grid container spacing={2}>
+                    <Grid item xs={12}>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
+                            <Typography variant="h3">TED Live</Typography>
+                            <Box>
+                                <Tooltip title="Set API Key">
+                                    <IconButton onClick={() => setApiKeyDialogOpen(true)} sx={{ mr: 1 }}>
+                                        <VpnKeyIcon />
+                                    </IconButton>
+                                </Tooltip>
+                                <Tooltip title="Library">
+                                    <IconButton onClick={() => setLibraryOpen(!libraryOpen)} sx={{ mr: 1 }}>
+                                        <LibraryBooksIcon />
+                                    </IconButton>
+                                </Tooltip>
+                                <Tooltip title="Settings">
+                                    <IconButton onClick={() => setSettingsOpen(!settingsOpen)}>
+                                        <SettingsIcon />
+                                    </IconButton>
+                                </Tooltip>
+                            </Box>
+                        </Box>
+
+                    {/* Main chat interface */}
+                    <ChatContainer>
+                        <SystemInstructionContainer>
+                            <TextField
+                                fullWidth
+                                variant="outlined"
+                                placeholder="Optional: Add system instructions to set tone and style for the model"
+                                value={systemInstruction}
+                                onChange={(e) => setSystemInstruction(e.target.value)}
+                                InputProps={{
+                                    endAdornment: (
+                                        <Tooltip title="System instructions help set the tone and behavior of the AI">
+                                            <IconButton size="small">
+                                                <InfoIcon fontSize="small" />
+                                            </IconButton>
+                                        </Tooltip>
+                                    )
+                                }}
+                            />
+                        </SystemInstructionContainer>
+
+                        {/* Feature buttons */}
+                        {messages.length === 1 && (
+                            <Box sx={{ display: 'flex', justifyContent: 'center', p: 4, flexWrap: 'wrap' }}>
+                                <FeatureButton
+                                    variant="outlined"
+                                    onClick={handleVoiceInput}
+                                    disabled={isScreenSharing}
+                                >
+                                    <MicIcon fontSize="large" />
+                                    <Typography>Talk to TED</Typography>
+                                    <Typography variant="caption">Start a real conversation using your microphone</Typography>
+                                </FeatureButton>
+
+                                <FeatureButton
+                                    variant="outlined"
+                                    onClick={handleScreenShare}
+                                    disabled={isRecording}
+                                >
+                                    <ScreenShareIcon fontSize="large" />
+                                    <Typography>Share your screen</Typography>
+                                    <Typography variant="caption">Show TED what you're working on</Typography>
+                                </FeatureButton>
+                            </Box>
+                        )}
+
+                        {/* Messages */}
+                        <MessageContainer ref={messageContainerRef}>
+                            {messages.map((message) => (
+                                <MessageBubble key={message.id} isUser={message.isUser}>
+                                    <Typography variant="body1">{message.text}</Typography>
+                                </MessageBubble>
+                            ))}
+                            {isLoading && (
+                                <Box sx={{ display: 'flex', justifyContent: 'center', p: 2 }}>
+                                    <CircularProgress size={24} />
+                                </Box>
+                            )}
+                        </MessageContainer>
+
+                        {/* Input area */}
+                        <InputContainer>
+                            <TextField
+                                fullWidth
+                                variant="outlined"
+                                placeholder="Message TED..."
+                                value={inputText}
+                                onChange={(e) => setInputText(e.target.value)}
+                                onKeyPress={(e) => {
+                                    if (e.key === 'Enter' && !e.shiftKey) {
+                                        e.preventDefault()
+                                        handleSendMessage()
+                                    }
+                                }}
+                                disabled={isLoading}
+                                sx={{ mr: 1 }}
+                            />
+                            <IconButton
+                                color="primary"
+                                onClick={handleSendMessage}
+                                disabled={inputText.trim() === '' || isLoading}
+                            >
+                                <SendIcon />
+                            </IconButton>
+                            <IconButton
+                                color={isRecording ? "error" : "primary"}
+                                onClick={handleVoiceInput}
+                                disabled={isScreenSharing || isLoading}
+                            >
+                                {isRecording ? <MicOffIcon /> : <MicIcon />}
+                            </IconButton>
+                            <IconButton
+                                color={isScreenSharing ? "error" : "primary"}
+                                onClick={handleScreenShare}
+                                disabled={isRecording || isLoading}
+                            >
+                                {isScreenSharing ? <StopIcon /> : <ScreenShareIcon />}
+                            </IconButton>
+                        </InputContainer>
+                    </ChatContainer>
+                </Grid>
+            </Grid>
+
+            {/* Error Snackbar */}
+            <Snackbar open={!!error} autoHideDuration={6000} onClose={handleErrorClose}>
+                <Alert onClose={handleErrorClose} severity="error" sx={{ width: '100%' }}>
+                    {error}
+                </Alert>
+            </Snackbar>
+
+            {/* API Key Dialog */}
+            <Drawer
+                anchor="right"
+                open={apiKeyDialogOpen}
+                onClose={() => setApiKeyDialogOpen(false)}
+                sx={{ '& .MuiDrawer-paper': { width: 320, padding: 2 } }}
+            >
+                <Box sx={{ p: 2 }}>
+                    <Typography variant="h4" sx={{ mb: 3 }}>Gemini API Key</Typography>
+                    <Typography variant="body2" sx={{ mb: 2 }}>
+                        Enter your Gemini API key to use the TED Live chat. You can get an API key from the
+                        <a href="https://ai.google.dev/" target="_blank" rel="noopener noreferrer"> Google AI Studio</a>.
+                    </Typography>
+                    <TextField
+                        fullWidth
+                        label="API Key"
+                        value={apiKey}
+                        onChange={(e) => setApiKey(e.target.value)}
+                        type="password"
+                        sx={{ mb: 2 }}
+                    />
+                    <Button
+                        variant="contained"
+                        onClick={() => handleApiKeyUpdate(apiKey)}
+                        disabled={!apiKey}
+                        fullWidth
+                    >
+                        Save API Key
+                    </Button>
+                </Box>
+            </Drawer>
+
+            {/* Settings Drawer */}
+            <Drawer
+                anchor="right"
+                open={settingsOpen}
+                onClose={() => setSettingsOpen(false)}
+                sx={{ '& .MuiDrawer-paper': { width: 320, padding: 2 } }}
+            >
+                <Box sx={{ p: 2 }}>
+                    <Typography variant="h4" sx={{ mb: 3 }}>Settings</Typography>
+
+                    <FormControl fullWidth sx={{ mb: 2 }}>
+                        <InputLabel>Model</InputLabel>
+                        <Select
+                            value={settings.model}
+                            label="Model"
+                            onChange={(e) => {
+                                setSettings({ ...settings, model: e.target.value })
+                                // Re-initialize chat session with new model
+                                initializeChatSession()
+                            }}
+                        >
+                            <MenuItem value={geminiConfig.models.flash}>Gemini 2.0 Flash</MenuItem>
+                            <MenuItem value={geminiConfig.models.pro}>Gemini 2.5</MenuItem>
+                        </Select>
+                    </FormControl>
+
+                    <FormControl fullWidth sx={{ mb: 2 }}>
+                        <InputLabel>Voice</InputLabel>
+                        <Select
+                            value={settings.voice}
+                            label="Voice"
+                            onChange={(e) => setSettings({ ...settings, voice: e.target.value })}
+                        >
+                            <MenuItem value="alloy">Alloy</MenuItem>
+                            <MenuItem value="echo">Echo</MenuItem>
+                            <MenuItem value="fable">Fable</MenuItem>
+                            <MenuItem value="onyx">Onyx</MenuItem>
+                            <MenuItem value="nova">Nova</MenuItem>
+                            <MenuItem value="shimmer">Shimmer</MenuItem>
+                        </Select>
+                    </FormControl>
+
+                    <FormControl fullWidth sx={{ mb: 2 }}>
+                        <InputLabel>Output Format</InputLabel>
+                        <Select
+                            value={settings.outputFormat}
+                            label="Output Format"
+                            onChange={(e) => setSettings({ ...settings, outputFormat: e.target.value })}
+                        >
+                            <MenuItem value="text">Text</MenuItem>
+                            <MenuItem value="audio">Audio</MenuItem>
+                        </Select>
+                    </FormControl>
+
+                    <Divider sx={{ my: 2 }} />
+
+                    <Typography variant="h6" sx={{ mb: 2 }}>Tools</Typography>
+
+                    <FormControlLabel
+                        control={
+                            <Switch
+                                checked={settings.codeExecution}
+                                onChange={(e) => setSettings({ ...settings, codeExecution: e.target.checked })}
+                            />
+                        }
+                        label={
+                            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                                <CodeIcon sx={{ mr: 1 }} />
+                                <Typography>Code Execution</Typography>
+                            </Box>
+                        }
+                        sx={{ mb: 1 }}
+                    />
+
+                    <FormControlLabel
+                        control={
+                            <Switch
+                                checked={settings.functionCalling}
+                                onChange={(e) => setSettings({ ...settings, functionCalling: e.target.checked })}
+                            />
+                        }
+                        label={
+                            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                                <FunctionsIcon sx={{ mr: 1 }} />
+                                <Typography>Function Calling</Typography>
+                            </Box>
+                        }
+                    />
+                </Box>
+            </Drawer>
+
+            {/* Library Drawer (Chat History) */}
+            <Drawer
+                anchor="right"
+                open={libraryOpen}
+                onClose={() => setLibraryOpen(false)}
+                sx={{ '& .MuiDrawer-paper': { width: 320, padding: 2 } }}
+            >
+                <Box sx={{ p: 2 }}>
+                    <Typography variant="h4" sx={{ mb: 3 }}>Library</Typography>
+                    
+                    <Button
+                        startIcon={<AddIcon />}
+                        onClick={createNewChat}
+                        size="small"
+                        variant="outlined"
+                        fullWidth
+                        sx={{ mb: 2 }}
+                    >
+                        New Chat
+                    </Button>
+                    
+                    <Divider sx={{ mb: 2 }} />
+                    
+                    <List sx={{ overflow: 'auto' }}>
+                        {chatHistory.map((chat) => (
+                            <ListItem
+                                key={chat.id}
+                                disablePadding
+                                secondaryAction={
+                                    <IconButton
+                                        edge="end"
+                                        onClick={(e) => deleteChat(chat.id, e)}
+                                        size="small"
+                                    >
+                                        <DeleteIcon fontSize="small" />
+                                    </IconButton>
+                                }
+                                sx={{ mb: 1 }}
+                            >
+                                <ListItemButton
+                                    selected={currentChatId === chat.id}
+                                    onClick={() => switchChat(chat.id)}
+                                    sx={{ borderRadius: 1 }}
+                                >
+                                    <ListItemText
+                                        primary={chat.name}
+                                        secondary={
+                                            chat.messages.length > 1
+                                                ? chat.messages[1]?.text.substring(0, 30) + '...'
+                                                : 'New conversation'
+                                        }
+                                    />
+                                </ListItemButton>
+                            </ListItem>
+                        ))}
+                    </List>
+                </Box>
+            </Drawer>
+            </TabPanel>
+        </Box>
+    )
+}
+
+export default Dashboard
