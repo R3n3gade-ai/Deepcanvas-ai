@@ -1,216 +1,176 @@
-<!-- markdownlint-disable MD030 -->
+<img width="100%" src="https://i.postimg.cc/XqLyHhb4/Black-White-Modern-AI-Company-Logo-3.png"></a>
 
-<img width="100%" src="https://github.com/FlowiseAI/Flowise/blob/main/images/flowise.png?raw=true"></a>
+# DeepCanvas AI
 
-# Flowise - Build LLM Apps Easily
+A customized version of Flowise with enhanced features for AI-powered content creation and management.
 
-[![Release Notes](https://img.shields.io/github/release/FlowiseAI/Flowise)](https://github.com/FlowiseAI/Flowise/releases)
-[![Discord](https://img.shields.io/discord/1087698854775881778?label=Discord&logo=discord)](https://discord.gg/jbaHfsRVBW)
-[![Twitter Follow](https://img.shields.io/twitter/follow/FlowiseAI?style=social)](https://twitter.com/FlowiseAI)
-[![GitHub star chart](https://img.shields.io/github/stars/FlowiseAI/Flowise?style=social)](https://star-history.com/#FlowiseAI/Flowise)
-[![GitHub fork](https://img.shields.io/github/forks/FlowiseAI/Flowise?style=social)](https://github.com/FlowiseAI/Flowise/fork)
+## Features
 
-English | [繁體中文](./i18n/README-TW.md) | [简体中文](./i18n/README-ZH.md) | [日本語](./i18n/README-JA.md) | [한국어](./i18n/README-KR.md)
+### Dashboard
 
-<h3>Drag & drop UI to build your customized LLM flow</h3>
-<a href="https://github.com/FlowiseAI/Flowise">
-<img width="100%" src="https://github.com/FlowiseAI/Flowise/blob/main/images/flowise.gif?raw=true"></a>
+-   AI chat interface similar to Google AI Studio
+-   Connection to Gemini 2.0/2.5
+-   Right column for chat history (Library)
+-   Voice selection options
+-   Output format options
+-   Code execution capabilities
+-   Function calling features
+-   System instruction support
+-   Markdown/HTML formatting for responses
+-   Gradual typing effect for responses
+-   "Thinking" indicator during processing
 
-## ⚡Quick Start
+### Studio
 
-Download and Install [NodeJS](https://nodejs.org/en/download) >= 18.15.0
+-   AI video and image generator
+-   Uses open source models for commercial SaaS
+-   Integration with MiniMax for video generation
+-   Upload box for images with prompt box to the right
+-   Generated videos stored in rows under the generator
 
-1. Install Flowise
-    ```bash
-    npm install -g flowise
-    ```
-2. Start Flowise
+### App Builder
 
-    ```bash
-    npx flowise start
-    ```
+-   Visual interface for building AI applications
+-   Drag-and-drop components
+-   Integration with various AI models and services
 
-    With username & password
+### Tasks
 
-    ```bash
-    npx flowise start --FLOWISE_USERNAME=user --FLOWISE_PASSWORD=1234
-    ```
+-   Social media connections
+-   Calendar scheduler
+-   Media design features
+-   Monthly calendar view as default
 
-3. Open [http://localhost:3000](http://localhost:3000)
+## Getting Started
 
-## 🐳 Docker
+### Prerequisites
 
-### Docker Compose
+-   [NodeJS](https://nodejs.org/en/download) >= 18.15.0
+-   [PNPM](https://pnpm.io/installation) >= 9.0.0
 
-1. Clone the Flowise project
-2. Go to `docker` folder at the root of the project
-3. Copy `.env.example` file, paste it into the same location, and rename to `.env` file
-4. `docker compose up -d`
-5. Open [http://localhost:3000](http://localhost:3000)
-6. You can bring the containers down by `docker compose stop`
+### Installation
 
-### Docker Image
-
-1. Build the image locally:
-    ```bash
-    docker build --no-cache -t flowise .
-    ```
-2. Run image:
+1. Clone the repository
 
     ```bash
-    docker run -d --name flowise -p 3000:3000 flowise
+    git clone https://github.com/R3n3gade-ai/Deepcanvas-ai.git
+    cd Deepcanvas-ai
     ```
 
-3. Stop image:
-    ```bash
-    docker stop flowise
-    ```
-
-## 👨‍💻 Developers
-
-Flowise has 3 different modules in a single mono repository.
-
--   `server`: Node backend to serve API logics
--   `ui`: React frontend
--   `components`: Third-party nodes integrations
--   `api-documentation`: Auto-generated swagger-ui API docs from express
-
-### Prerequisite
-
--   Install [PNPM](https://pnpm.io/installation)
-    ```bash
-    npm i -g pnpm
-    ```
-
-### Setup
-
-1.  Clone the repository
-
-    ```bash
-    git clone https://github.com/FlowiseAI/Flowise.git
-    ```
-
-2.  Go into repository folder
-
-    ```bash
-    cd Flowise
-    ```
-
-3.  Install all dependencies of all modules:
+2. Install dependencies
 
     ```bash
     pnpm install
     ```
 
-4.  Build all the code:
+3. Build the project
 
     ```bash
     pnpm build
     ```
 
-    <details>
-    <summary>Exit code 134 (JavaScript heap out of memory)</summary>  
-      If you get this error when running the above `build` script, try increasing the Node.js heap size and run the script again:
-
-        export NODE_OPTIONS="--max-old-space-size=4096"
-        pnpm build
-
-    </details>
-
-5.  Start the app:
+    If you encounter memory issues during build:
 
     ```bash
-    pnpm start
+    export NODE_OPTIONS="--max-old-space-size=4096"
+    pnpm build
     ```
 
-    You can now access the app on [http://localhost:3000](http://localhost:3000)
+4. Start the application
 
-6.  For development build:
+    ```bash
+    cd packages/server/bin
+    ./run start
+    ```
 
-    -   Create `.env` file and specify the `VITE_PORT` (refer to `.env.example`) in `packages/ui`
-    -   Create `.env` file and specify the `PORT` (refer to `.env.example`) in `packages/server`
-    -   Run
+    On Windows:
 
-        ```bash
-        pnpm dev
-        ```
+    ```bash
+    cd packages/server/bin
+    .\run start
+    ```
 
-    Any code changes will reload the app automatically on [http://localhost:8080](http://localhost:8080)
+5. Access the application at [http://localhost:3000](http://localhost:3000)
 
-## 🔒 Authentication
+### Development Mode
 
-To enable app level authentication, add `FLOWISE_USERNAME` and `FLOWISE_PASSWORD` to the `.env` file in `packages/server`:
+For development with hot-reloading:
+
+1. Create `.env` files:
+
+    - In `packages/ui` folder with `VITE_PORT=8080`
+    - In `packages/server` folder with `PORT=3000`
+
+2. Run the development server:
+
+    ```bash
+    pnpm dev
+    ```
+
+3. Access the development server at [http://localhost:8080](http://localhost:8080)
+
+## Project Structure
+
+DeepCanvas AI has a modular architecture with the following components:
+
+-   `server`: Node.js backend that handles API logic and services
+-   `ui`: React frontend with custom components for the DeepCanvas AI interface
+-   `components`: Third-party integrations and custom nodes
+-   `api-documentation`: Auto-generated Swagger UI API documentation
+
+## Configuration
+
+### Authentication
+
+To enable application-level authentication, add the following to the `.env` file in `packages/server`:
 
 ```
-FLOWISE_USERNAME=user
-FLOWISE_PASSWORD=1234
+FLOWISE_USERNAME=your_username
+FLOWISE_PASSWORD=your_password
 ```
 
-## 🌱 Env Variables
+### API Keys
 
-Flowise support different environment variables to configure your instance. You can specify the following variables in the `.env` file inside `packages/server` folder. Read [more](https://github.com/FlowiseAI/Flowise/blob/main/CONTRIBUTING.md#-env-variables)
+The application uses the following API keys:
 
-## 📖 Documentation
+-   **Gemini API**: `AIzaSyDOnRHxuSmGIL7VygWXzWJsSrgEeQipGII` (pre-configured)
+-   **MiniMax Video Generation**: Configure in the `.env` file:
+    ```
+    MINIMAX_API_KEY=your_minimax_api_key
+    ```
 
-[Flowise Docs](https://docs.flowiseai.com/)
+### Environment Variables
 
-## 🌐 Self Host
+You can configure various aspects of the application using environment variables in the `.env` file in the `packages/server` folder:
 
-Deploy Flowise self-hosted in your existing infrastructure, we support various [deployments](https://docs.flowiseai.com/configuration/deployment)
+```
+PORT=3000                      # Server port
+DEEP_CANVAS_API_KEY=your_key   # Custom API key for DeepCanvas features
+DATABASE_TYPE=sqlite           # Database type (sqlite, postgres, etc.)
+DATABASE_PATH=~/.flowise       # Path to database
+```
 
--   [AWS](https://docs.flowiseai.com/configuration/deployment/aws)
--   [Azure](https://docs.flowiseai.com/configuration/deployment/azure)
--   [Digital Ocean](https://docs.flowiseai.com/configuration/deployment/digital-ocean)
--   [GCP](https://docs.flowiseai.com/configuration/deployment/gcp)
--   [Alibaba Cloud](https://computenest.console.aliyun.com/service/instance/create/default?type=user&ServiceName=Flowise社区版)
--   <details>
-      <summary>Others</summary>
+## Troubleshooting
 
-    -   [Railway](https://docs.flowiseai.com/configuration/deployment/railway)
+### Common Issues
 
-        [![Deploy on Railway](https://railway.app/button.svg)](https://railway.app/template/pn4G8S?referralCode=WVNPD9)
+1. **Build Errors**: If you encounter memory issues during build, increase the Node.js heap size:
 
-    -   [Render](https://docs.flowiseai.com/configuration/deployment/render)
+    ```bash
+    export NODE_OPTIONS="--max-old-space-size=4096"
+    pnpm build
+    ```
 
-        [![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://docs.flowiseai.com/configuration/deployment/render)
+2. **Server Won't Start**: Check if the port is already in use. You can change the port in the `.env` file.
 
-    -   [HuggingFace Spaces](https://docs.flowiseai.com/deployment/hugging-face)
+3. **API Connection Issues**: Verify that your API keys are correctly configured in the `.env` file.
 
-        <a href="https://huggingface.co/spaces/FlowiseAI/Flowise"><img src="https://huggingface.co/datasets/huggingface/badges/raw/main/open-in-hf-spaces-sm.svg" alt="HuggingFace Spaces"></a>
+4. **UI Not Loading**: Make sure you've built the UI with `pnpm build` before starting the server.
 
-    -   [Elestio](https://elest.io/open-source/flowiseai)
+### Getting Help
 
-        [![Deploy on Elestio](https://elest.io/images/logos/deploy-to-elestio-btn.png)](https://elest.io/open-source/flowiseai)
+If you encounter any issues or have questions about DeepCanvas AI, please open an issue on the [GitHub repository](https://github.com/R3n3gade-ai/Deepcanvas-ai/issues).
 
-    -   [Sealos](https://cloud.sealos.io/?openapp=system-template%3FtemplateName%3Dflowise)
+## License
 
-        [![](https://raw.githubusercontent.com/labring-actions/templates/main/Deploy-on-Sealos.svg)](https://cloud.sealos.io/?openapp=system-template%3FtemplateName%3Dflowise)
-
-    -   [RepoCloud](https://repocloud.io/details/?app_id=29)
-
-        [![Deploy on RepoCloud](https://d16t0pc4846x52.cloudfront.net/deploy.png)](https://repocloud.io/details/?app_id=29)
-
-      </details>
-
-## ☁️ Flowise Cloud
-
-[Get Started with Flowise Cloud](https://flowiseai.com/)
-
-## 🙋 Support
-
-Feel free to ask any questions, raise problems, and request new features in [discussion](https://github.com/FlowiseAI/Flowise/discussions)
-
-## 🙌 Contributing
-
-Thanks go to these awesome contributors
-
-<a href="https://github.com/FlowiseAI/Flowise/graphs/contributors">
-<img src="https://contrib.rocks/image?repo=FlowiseAI/Flowise" />
-</a>
-
-See [contributing guide](CONTRIBUTING.md). Reach out to us at [Discord](https://discord.gg/jbaHfsRVBW) if you have any questions or issues.
-[![Star History Chart](https://api.star-history.com/svg?repos=FlowiseAI/Flowise&type=Timeline)](https://star-history.com/#FlowiseAI/Flowise&Date)
-
-## 📄 License
-
-Source code in this repository is made available under the [Apache License Version 2.0](LICENSE.md).
+This project is licensed under the MIT License - see the LICENSE file for details.
